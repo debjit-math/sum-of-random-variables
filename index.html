@@ -1,59 +1,168 @@
 <!doctype html>
-<html>
+<html lang="en">
 <head>
 <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PMF & Entropy Visualizer</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
-    body {
-        font-family: Arial, sans-serif;
-        margin: 20px;
-        background: #f5f5f5;
+    /* CSS Variables for Theme Management */
+    :root {
+        --bg-color: #f0f2f5;
+        --card-bg: #ffffff;
+        --text-color: #333333;
+        --text-muted: #666666;
+        --border-color: #dddddd;
+        --input-bg: #ffffff;
+        --accent-color: #3498db;
     }
-    .card {
-        background: #fff;
-        padding: 15px;
-        border-radius: 8px;
-        margin: 10px 0;
+
+    body.dark-mode {
+        --bg-color: #121212;
+        --card-bg: #1e1e1e;
+        --text-color: #e0e0e0;
+        --text-muted: #a0a0a0;
+        --border-color: #444444;
+        --input-bg: #2c2c2c;
+        --accent-color: #2980b9;
+    }
+
+    /* Global Styles */
+    body {
+        font-family: 'Segoe UI', Arial, sans-serif;
+        margin: 0;
+        padding: 20px;
+        background: var(--bg-color);
+        color: var(--text-color);
+        transition: background-color 0.3s, color 0.3s;
+    }
+
+    /* Header & Controls */
+    .header-controls {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 10px;
+    }
+
+    #theme-toggle {
+        background: var(--card-bg);
+        color: var(--text-color);
+        border: 1px solid var(--border-color);
+        padding: 8px 12px;
+        border-radius: 20px;
+        cursor: pointer;
+        font-weight: bold;
+        transition: all 0.3s;
         box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }
-    .rv {
-        border: 1px solid #ccc;
-        padding: 10px;
-        margin: 8px 0;
-        border-radius: 5px;
+
+    #theme-toggle:hover {
+        background: var(--border-color);
     }
+
+    /* Card Layout */
+    .card {
+        background: var(--card-bg);
+        padding: 20px;
+        border-radius: 12px;
+        margin: 10px 0 20px 0;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        transition: background-color 0.3s, box-shadow 0.3s;
+    }
+
+    /* Inputs & Buttons */
+    input[type="number"], select {
+        background: var(--input-bg);
+        color: var(--text-color);
+        border: 1px solid var(--border-color);
+        padding: 5px;
+        border-radius: 4px;
+        margin: 0 5px;
+    }
+
+    button {
+        background: var(--accent-color);
+        color: #fff;
+        border: none;
+        padding: 8px 15px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-weight: bold;
+        transition: background-color 0.2s;
+    }
+
+    button:hover {
+        opacity: 0.9;
+    }
+
+    /* Random Variable Containers */
+    .rv {
+        background: var(--card-bg);
+        border: 1px solid var(--border-color);
+        padding: 15px;
+        margin: 10px 0;
+        border-radius: 8px;
+        transition: background-color 0.3s, border-color 0.3s;
+    }
+
+    .rv-row {
+        display: flex;
+        align-items: center;
+        margin-bottom: 8px;
+    }
+
+    input[type="range"] {
+        flex-grow: 1;
+        margin: 0 15px;
+        cursor: pointer;
+    }
+
+    /* Stats & Typography */
     #entropyInfo {
         font-size: 15px;
-        font-weight: normal;
-        margin-top: 10px;
+        margin-top: 15px;
         text-align: center;
     }
+    
+    .muted-text {
+        color: var(--text-muted);
+        font-size: 13px;
+    }
+
     .chart-container {
         position: relative;
-        height: 150px; 
+        height: 180px; 
         width: 100%;
-        margin-top: 10px;
+        margin-top: 15px;
     }
 </style>
 </head>
 <body>
 
+<div class="header-controls">
+    <h2>Probability Visualizer</h2>
+    <button id="theme-toggle">🌙 Dark Mode</button>
+</div>
+
 <div class="card">
-    n <input id="n" type="number" value="3" min="1">
-    r <input id="r" type="number" value="3" min="1">
-    <label><input id="iid" type="checkbox" checked> IID Mode</label>
-    <button onclick="gen()">Generate</button>
+    <label>n <input id="n" type="number" value="3" min="1"></label>
+    <label style="margin-left: 10px;">r <input id="r" type="number" value="3" min="1"></label>
+    <label style="margin-left: 15px; cursor: pointer;">
+        <input id="iid" type="checkbox" checked> IID Mode
+    </label>
+    <button style="margin-left: 15px;" onclick="gen()">Generate Variables</button>
 </div>
 
 <div id="vars"></div>
 
 <div class="card">
     <canvas id="cv"></canvas>
-    <div id="stats" style="margin-top: 15px; font-weight: bold;"></div>
+    <div id="stats" style="margin-top: 15px; font-weight: bold; text-align: center;"></div>
     
-    <hr style="margin: 20px 0; border: 0; border-top: 1px solid #eee;">
+    <hr style="margin: 25px 0; border: 0; border-top: 1px solid var(--border-color);">
     
-    <h3 style="margin-bottom: 0;">Entropy</h3>
+    <h3 style="margin-bottom: 0; text-align: center;">System Entropy</h3>
     
     <div class="chart-container">
         <canvas id="entropyCv"></canvas>
@@ -64,6 +173,23 @@
 
 <script>
 let chart, entropyChart;
+
+// Theme Toggle Logic
+const themeToggle = document.getElementById('theme-toggle');
+themeToggle.addEventListener('click', () => {
+    document.body.classList.toggle('dark-mode');
+    const isDark = document.body.classList.contains('dark-mode');
+    themeToggle.textContent = isDark ? '☀️ Light Mode' : '🌙 Dark Mode';
+    upd(); // Re-render charts to apply theme colors to axes/labels
+});
+
+function getThemeColors() {
+    const style = getComputedStyle(document.body);
+    return {
+        text: style.getPropertyValue('--text-color').trim(),
+        grid: style.getPropertyValue('--border-color').trim()
+    };
+}
 
 function preset(r, t) {
     let a = [];
@@ -82,18 +208,23 @@ function gen() {
     for (let i = 0; i < N; i++) {
         let dis = (iid.checked && i > 0) ? "display:none" : "";
         let h = `<div class="rv" id="rv${i}" style="${dis}">
-                    <h3 style="margin-top:0;">X${i + 1}</h3>
-                    <select onchange="applyPreset(${i},this.value)">
-                        <option>Custom</option>
-                        <option>Uniform</option>
-                        <option>Increasing</option>
-                        <option>Decreasing</option>
-                        <option>Triangular</option>
-                        <option>Random</option>
-                    </select><br><br>`;
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 10px;">
+                        <h3 style="margin:0;">Random Variable X${i + 1}</h3>
+                        <select onchange="applyPreset(${i},this.value)">
+                            <option>Custom</option>
+                            <option>Uniform</option>
+                            <option>Increasing</option>
+                            <option>Decreasing</option>
+                            <option>Triangular</option>
+                            <option>Random</option>
+                        </select>
+                    </div>`;
         for (let k = 0; k <= R; k++) {
-            h += `P(${k}) <input type="range" min="0" max="100" value="${100 / (R + 1)}" id="s${i}_${k}" oninput="slide(${i})">
-                  <span id="v${i}_${k}"></span><br>`;
+            h += `<div class="rv-row">
+                    <span style="min-width: 40px;">P(${k})</span>
+                    <input type="range" min="0" max="100" value="${100 / (R + 1)}" id="s${i}_${k}" oninput="slide(${i})">
+                    <span id="v${i}_${k}" style="min-width: 45px; text-align: right;"></span>
+                  </div>`;
         }
         h += "</div>";
         vars.insertAdjacentHTML("beforeend", h);
@@ -127,6 +258,7 @@ function pmf(i) {
     let R = +r.value, a = [];
     for (let k = 0; k <= R; k++) a.push(+s(i, k).value);
     let sum = a.reduce((x, y) => x + y, 0);
+    if (sum === 0) sum = 1; // Prevent division by zero
     a = a.map(v => v / sum);
     a.forEach((v, k) => document.getElementById("v" + i + "_" + k).textContent = v.toFixed(3));
     return a;
@@ -144,6 +276,8 @@ function upd() {
     let d = pmf(0);
     for (let i = 1; i < +n.value; i++) d = conv(d, pmf(i));
     
+    const theme = getThemeColors();
+
     if (chart) chart.destroy();
     chart = new Chart(document.getElementById("cv"), {
         type: "bar",
@@ -152,12 +286,20 @@ function upd() {
             datasets: [{
                 label: "Probability Mass Function (PMF)",
                 data: d,
-                backgroundColor: 'rgba(54, 162, 235, 0.6)',
-                borderColor: 'rgba(54, 162, 235, 1)',
-                borderWidth: 1
+                backgroundColor: 'rgba(52, 152, 219, 0.7)',
+                borderColor: 'rgba(41, 128, 185, 1)',
+                borderWidth: 1,
+                borderRadius: 4
             }]
         },
-        options: { animation: false }
+        options: { 
+            animation: false,
+            scales: {
+                x: { ticks: { color: theme.text }, grid: { color: theme.grid } },
+                y: { ticks: { color: theme.text }, grid: { color: theme.grid } }
+            },
+            plugins: { legend: { labels: { color: theme.text } } }
+        }
     });
 
     let m = 0, v = 0, H = 0;
@@ -167,7 +309,7 @@ function upd() {
     });
     d.forEach((p, x) => v += (x - m) * (x - m) * p);
 
-    stats.innerHTML = `Mean = ${m.toFixed(4)} <br> Variance = ${v.toFixed(4)}`;
+    stats.innerHTML = `Mean = ${m.toFixed(4)} &nbsp;|&nbsp; Variance = ${v.toFixed(4)}`;
 
     // --- Entropy Logic and Second Chart ---
     const Hmax = Math.log2((+n.value) * (+r.value) + 1);
@@ -189,26 +331,35 @@ function upd() {
                 {
                     label: "Current Entropy",
                     data: [H],
-                    backgroundColor: barColor
+                    backgroundColor: barColor,
+                    borderRadius: 4
                 },
                 {
                     label: "Maximum Entropy",
                     data: [Hmax],
-                    backgroundColor: "#e0e0e0"
+                    backgroundColor: theme.grid,
+                    borderRadius: 4
                 }
             ]
         },
         options: {
-            indexAxis: 'y', // Renders the bar chart horizontally
+            indexAxis: 'y', 
             animation: false,
             maintainAspectRatio: false,
             scales: {
-                x: {
-                    beginAtZero: true,
-                    max: Hmax > 0 ? Hmax : 1 
+                x: { 
+                    beginAtZero: true, 
+                    max: Hmax > 0 ? Hmax : 1,
+                    ticks: { color: theme.text },
+                    grid: { color: theme.grid }
+                },
+                y: {
+                    ticks: { color: theme.text },
+                    grid: { display: false }
                 }
             },
             plugins: {
+                legend: { labels: { color: theme.text } },
                 tooltip: {
                     callbacks: {
                         label: function(context) {
@@ -223,11 +374,13 @@ function upd() {
     // Update Text Details
     document.getElementById("entropyInfo").innerHTML = `
         <b>Current: ${H.toFixed(4)} bits</b> (${percent.toFixed(1)}% of maximum)<br>
-        <span style="color:#666; font-size: 13px;">Maximum = log₂(${(+n.value)*(+r.value)+1}) = ${Hmax.toFixed(4)} bits</span>
+        <span class="muted-text">Maximum = log₂(${(+n.value)*(+r.value)+1}) = ${Hmax.toFixed(4)} bits</span>
     `;
 }
 
 iid.onchange = gen;
+n.onchange = gen; // Re-generate if 'n' changes
+r.onchange = gen; // Re-generate if 'r' changes
 gen();
 </script>
 </body>
